@@ -4,6 +4,7 @@ import {
   creator,
   forchela,
   verona,
+  casasbahia,
   web,
   javascript,
   typescript,
@@ -44,6 +45,11 @@ export const navLinks = [
   {
     id: "contact",
     title: "Contact",
+  },
+  {
+    id: "cybersecurity",
+    title: "CyberSecurity",
+    path: "/cybersecurity"
   },
 ];
 
@@ -141,6 +147,19 @@ const experiences = [
       "Desenvolver e fornecer manuntenção a um site institucional",
       "Colaborando com profissionais parceiros do Web Design",
       "Implementando Design Responsivo, SEO e Google Tag Manager",
+      "Fornecendo atualizações constantes ao cliente e recebendo feedbacks construtivos",
+    ],
+  },
+  {
+    title: "Analista de dados Junior",
+    company_name: "Grupo Casas Bahia",
+    icon: casasbahia,
+    iconBg: "#E6DEDD",
+    date: "Jan 2024 - Today",
+    points: [
+      "Desenvolver e fornecer manuntenção para dashboards no power bi",
+      "Colaborando com profissionais parceiros de engenharia de dados",
+      "Implementando soluções de automação de processos e integrações com APIs externas",
       "Fornecendo atualizações constantes ao cliente e recebendo feedbacks construtivos",
     ],
   },

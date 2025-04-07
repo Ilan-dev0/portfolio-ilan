@@ -7,6 +7,7 @@ import github from "./github.png";
 import menu from "./menu.svg";
 import verona from "./company/verona.png";
 import forchela from "./company/forchela.png";
+import casasbahia from "./company/casasbahia.png";
 import close from "./close.svg";
 import virus from "./virus.png";
 import css from "./tech/css.png";
@@ -71,5 +72,6 @@ export {
   forchela,
   siteverona,
   siteforchela,
-  trendy
+  trendy,
+  casasbahia
 };

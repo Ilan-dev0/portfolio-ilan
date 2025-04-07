@@ -8,7 +8,9 @@ import Works from "./Works";
 import Feedbacks from "./Feedbacks";
 import Contact from "./Contact";
 import CanvasLoader from "./Loader";
-
+import ChatBot from "./ChatBot";
+import CyberSecurity from "./CyberSecurity";
+import AdminAuth from "./AdminAuth";
 
 export {
   Hero,
@@ -20,6 +22,9 @@ export {
   Feedbacks,
   Contact,
   CanvasLoader,
+  ChatBot,
+  CyberSecurity,
+  AdminAuth,
   EarthCanvas, 
   BallCanvas, 
   ComputersCanvas, 
