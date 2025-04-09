@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { styles } from '../styles';
 import { fadeIn } from '../utils/motion';
 import AdminDashboard from './AdminDashboard';
+import { useNavigate } from 'react-router-dom';
 
 const AdminAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   // Token secreto escondido no comentário HTML do site
   const SECRET_TOKEN = 'CYB3RSH3LL_FOR_CYB3RR4TS';
@@ -32,7 +34,11 @@ const AdminAuth = () => {
   };
 
   if (isAuthenticated) {
-    return <AdminDashboard />;
+    return (
+      <div className="pt-4">
+        <AdminDashboard />
+      </div>
+    );
   }
 
   return (

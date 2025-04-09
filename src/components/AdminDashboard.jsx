@@ -1,25 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { styles } from '../styles';
-import { SectionWrapper } from '../hoc';
 import { fadeIn, textVariant } from '../utils/motion';
+import { AnalyticsService } from '../services/analyticsService';
+import io from 'socket.io-client';
+import axios from 'axios';
+
+const getVisitorInfo = async () => {
+  try {
+    const response = await axios.get('https://ipapi.co/json/');
+    return {
+      ip: response.data.ip,
+      city: response.data.city,
+      region: response.data.region,
+      country: response.data.country_name
+    };
+  } catch (error) {
+    console.error('Erro ao obter informações do visitante:', error);
+    return {
+      ip: 'Não disponível',
+      city: 'Não disponível',
+      region: 'Não disponível',
+      country: 'Não disponível'
+    };
+  }
+};
 
 const AdminDashboard = () => {
-  const [visitors, setVisitors] = useState({
-    total: 0,
-    active: 0
+  const [analytics, setAnalytics] = useState({
+    totalVisitors: 0,
+    activeVisitors: 0,
+    accessLogs: []
   });
 
+  // Verificar autenticação
   useEffect(() => {
-    // Simular dados de visitantes
-    const interval = setInterval(() => {
-      setVisitors(prev => ({
-        total: prev.total + Math.floor(Math.random() * 2),
-        active: Math.floor(Math.random() * 10)
-      }));
-    }, 5000);
+    const adminToken = localStorage.getItem('admin_token');
+    if (adminToken !== 'CYB3RSH3LL_FOR_CYB3RR4TS') {
+      window.location.href = '/';
+    }
+  }, []);
 
-    return () => clearInterval(interval);
+  useEffect(() => {
+    let socket;
+    let reconnectInterval;
+    let sessionId;
+    const adminToken = localStorage.getItem('admin_token');
+
+    const connectSocket = () => {
+      socket = io('http://localhost:3000', {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+
+      socket.on('connect', () => {
+        console.log('WebSocket conectado');
+        socket.emit('authenticate', adminToken);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('WebSocket desconectado');
+      });
+
+      socket.on('analytics_update', (data) => {
+        setAnalytics(data);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('Erro de conexão WebSocket:', error);
+        startPolling();
+      });
+    };
+
+    const startPolling = () => {
+      if (!reconnectInterval) {
+        reconnectInterval = setInterval(async () => {
+          const data = await AnalyticsService.getAnalytics();
+          setAnalytics(data);
+        }, 5000);
+      }
+    };
+
+    const initializeVisitor = async () => {
+      try {
+        const visitorInfo = await getVisitorInfo();
+        await AnalyticsService.registerVisit(visitorInfo);
+        
+        sessionId = Math.random().toString(36).substring(2);
+        await AnalyticsService.updateActiveSession(sessionId, visitorInfo.ip);
+      } catch (error) {
+        console.error('Erro ao inicializar visitante:', error);
+      }
+    };
+
+    const loadInitialData = async () => {
+      try {
+        const data = await AnalyticsService.getAnalytics();
+        setAnalytics(data);
+      } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+      }
+    };
+
+    initializeVisitor();
+    loadInitialData();
+    connectSocket();
+
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+      if (reconnectInterval) {
+        clearInterval(reconnectInterval);
+      }
+    };
   }, []);
 
   return (
@@ -37,7 +132,7 @@ const AdminDashboard = () => {
           <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Visitantes Totais
           </h3>
-          <div className="text-4xl font-bold text-white">{visitors.total}</div>
+          <div className="text-4xl font-bold text-white">{analytics.totalVisitors}</div>
         </motion.div>
 
         <motion.div
@@ -47,7 +142,7 @@ const AdminDashboard = () => {
           <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Visitantes Ativos
           </h3>
-          <div className="text-4xl font-bold text-white">{visitors.active}</div>
+          <div className="text-4xl font-bold text-white">{analytics.activeVisitors}</div>
         </motion.div>
 
         <motion.div
@@ -59,10 +154,11 @@ const AdminDashboard = () => {
           </h3>
           <div className="h-64 overflow-y-auto bg-black/30 rounded-lg p-4">
             <div className="space-y-2 text-white/70">
-              {/* Simular logs de acesso */}
-              <div>✓ Novo acesso - IP: 192.168.1.*** - {new Date().toLocaleString()}</div>
-              <div>✓ Token encontrado - IP: 172.16.0.*** - {new Date().toLocaleString()}</div>
-              <div>✓ Tentativa de login - IP: 10.0.0.*** - {new Date().toLocaleString()}</div>
+              {analytics.accessLogs.map((log, index) => (
+                <div key={index}>
+                  ✓ Novo acesso - IP: {log.ip} - {log.city}, {log.region}, {log.country} - {new Date(log.timestamp).toLocaleString()}
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -71,4 +167,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default SectionWrapper(AdminDashboard, "admin");
+export default AdminDashboard;

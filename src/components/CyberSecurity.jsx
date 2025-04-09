@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { styles } from '../styles';
-import { SectionWrapper } from '../hoc';
 import { fadeIn, textVariant } from '../utils/motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AdminAuth from './AdminAuth';
 
 import { technologies } from '../constants';
-import { FaShieldAlt, FaBug, FaLock, FaUserSecret, FaTools } from 'react-icons/fa';
+import { FaShieldAlt, FaBug, FaLock, FaUserSecret, FaTools, FaArrowLeft } from 'react-icons/fa';
+// Primeira pista - Base64
+window.stage1_hint = "Q1lCM1JTSDNMTCBGb3IgQ3liM3JSNFRz";
+
 import { SiWireshark, SiMetasploit, SiBurpsuite } from 'react-icons/si';
 
-const NeonSkillBar = ({ label, value, icon: Icon }) => {
+// Segunda pista - ROT13
+window.stage2_hint = "Gur frperg vf va gur pbqr";
+
+// Terceira pista - Hexadecimal
+window.stage3_hint = "436F6E67726174732120546865206B657920697320435942335253483354535F464F525F4359423352523454532E";
+
+// Dica para começar: console.log(stage1_hint)
+
+const NeonSkillBar = ({ label, value, icon: Icon, description }) => {
   const [isAnimating, setIsAnimating] = useState(true);
   const controls = useAnimation();
 
@@ -47,7 +57,10 @@ const NeonSkillBar = ({ label, value, icon: Icon }) => {
     <div className="w-full mb-6 p-4 bg-black/30 rounded-lg border border-secondary/30 hover:border-secondary/50 transition-all">
       <div className="flex items-center gap-3 mb-2">
         <Icon className="text-2xl text-blue-400" />
-        <span className="font-bold text-white">{label}</span>
+        <div>
+          <span className="font-bold text-white block">{label}</span>
+          <span className="text-sm text-gray-400">{description}</span>
+        </div>
       </div>
       <div className="relative h-6 bg-black/50 rounded overflow-hidden">
         <motion.div
@@ -63,31 +76,45 @@ const NeonSkillBar = ({ label, value, icon: Icon }) => {
   );
 };
 
+// Dica oculta nos valores: Soma os valores em hexadecimal
 const skills = [
-  { label: 'SQL Injection', value: 45, icon: FaBug },
-  { label: 'XSS (Cross-Site Scripting)', value: 40, icon: FaShieldAlt },
-  { label: 'CSRF Protection', value: 35, icon: FaLock },
-  { label: 'Social Engineering', value: 30, icon: FaUserSecret }
+  { label: 'SQL Injection', value: 79, icon: FaBug, description: 'Identificação e prevenção de injeções SQL' }, // 43 em hex
+  { label: 'XSS (Cross-Site Scripting)', value: 69, icon: FaShieldAlt, description: 'Proteção contra ataques XSS' }, // 59 em hex
+  { label: 'CSRF Protection', value: 51, icon: FaLock, description: 'Implementação de tokens CSRF' }, // 33 em hex
+  { label: 'Social Engineering', value: 82, icon: FaUserSecret, description: 'Análise de técnicas de engenharia social' } // 52 em hex
 ];
 
+// ASCII: 83 72 51 76 76
 const tools = [
-  { label: 'Metasploit', value: 40, icon: SiMetasploit },
-  { label: 'Burp Suite', value: 35, icon: SiBurpsuite },
-  { label: 'Wireshark', value: 30, icon: SiWireshark },
-  { label: 'Custom Tools', value: 25, icon: FaTools }
+  { label: 'Metasploit', value: 20, icon: SiMetasploit, description: 'Framework para testes de penetração' }, // Morse: ..-. --- .-.
+  { label: 'Burp Suite', value: 49, icon: SiBurpsuite, description: 'Análise de segurança web' }, // Morse: .-. ....- - ...
+  { label: 'Wireshark', value: 32, icon: SiWireshark, description: 'Análise de tráfego de rede' }, // Binary: 01010010
+  { label: 'Custom Tools', value: 83, icon: FaTools, description: 'Desenvolvimento de ferramentas próprias' } // Hidden key in values
 ];
 
-const CyberSecurity = () => {
+// Vigenère: Pbqr vf gur xrl gb gur qnex
+
+const CyberSecurityContent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showWarning, setShowWarning] = useState(true);
   const [accepted, setAccepted] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem('cyber_terms_accepted');
+    if (hasAccepted === 'true') {
+      setAccepted(true);
+      setShowWarning(false);
+    }
+  }, []);
+
   const handleAccept = () => {
     setAccepted(true);
     setShowWarning(false);
+    localStorage.setItem('cyber_terms_accepted', 'true');
   };
 
   const handleDecline = () => {
@@ -109,10 +136,28 @@ const CyberSecurity = () => {
     setShowAuthModal(true);
   };
 
+  const isAdminPage = location.pathname.includes('admin');
+
+  if (isAdminPage) {
+    return (
+      <div className="min-h-screen pt-24">
+        <div className="flex justify-start mb-8 px-8">
+          <button
+            onClick={() => navigate('/cybersecurity')}
+            className="py-3 px-6 bg-blue-600/20 hover:bg-blue-500/30 rounded-lg transition-colors text-white/70 hover:text-white/90 flex items-center gap-2"
+          >
+            <FaArrowLeft className="text-xl" /> Voltar para Cybersecurity
+          </button>
+        </div>
+        <AdminAuth />
+      </div>
+    );
+  }
+
   return (
     <>
       <AnimatePresence>
-        {showWarning && (
+        {showWarning && !isAdminPage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -150,14 +195,21 @@ const CyberSecurity = () => {
         )}
       </AnimatePresence>
 
-      {accepted && !window.location.pathname.includes('admin') && (
+      {/* Conteúdo principal da página de cybersecurity */}
+      {accepted && !isAdminPage && (
         <div className={`${styles.padding} max-w-7xl mx-auto relative z-0`}>
-          <div className="flex justify-end mb-8">
+          <div className="flex justify-between mb-8">
+            <button
+              onClick={() => navigate('/')}
+              className="py-3 px-6 bg-blue-600/20 hover:bg-blue-500/30 rounded-lg transition-colors text-white/70 hover:text-white/90 flex items-center gap-2"
+            >
+              <FaArrowLeft className="text-xl" /> Voltar para Home
+            </button>
             <button
               onClick={handleAdminClick}
-              className="py-3 px-6 bg-blue-600/20 hover:bg-blue-500/30 rounded-lg transition-colors text-white/70 hover:text-white/90"
+              className="py-3 px-6 bg-red-600/20 hover:bg-red-500/30 rounded-lg transition-colors text-white/70 hover:text-white/90 flex items-center gap-2"
             >
-              Área Administrativa
+              <FaLock className="text-xl" /> Área Administrativa
             </button>
           </div>
           <motion.div variants={textVariant()}>
@@ -365,9 +417,8 @@ const CyberSecurity = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {window.location.pathname.includes('admin') && <AdminAuth />}
     </>
   );
 };
 
-export default SectionWrapper(CyberSecurity, "cyber");
+export default CyberSecurityContent;

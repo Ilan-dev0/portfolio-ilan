@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import { About, Contact, Experience, Feedbacks, Hero, Navbar, Tech, Works, StarsCanvas, ChatBot, CyberSecurity, AdminAuth } from "./components";
+import { About, Contact, Experience, Feedbacks, Hero, Navbar, Tech, Works, ChatBot, CyberSecurity, AdminAuth } from "./components";
+import { StarsCanvas } from "./components/canvas";
 
 const App = () => {
   return (
@@ -23,9 +24,13 @@ const App = () => {
               </div>
             </>
           } />
+          <Route path="/cyber" element={<CyberSecurity />} />
           <Route path="/cybersecurity" element={<CyberSecurity />} />
           <Route path="/admin" element={<AdminAuth />} />
         </Routes>
+        <div className='relative z-0'>
+          <StarsCanvas />
+        </div>
         <ChatBot />
       </div>
     </BrowserRouter>
