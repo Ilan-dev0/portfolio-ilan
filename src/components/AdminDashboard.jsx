@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { styles } from '../styles';
 import { fadeIn, textVariant } from '../utils/motion';
-import { AnalyticsService } from '../services/analyticsService';
-import io from 'socket.io-client';
 import axios from 'axios';
 
 const getVisitorInfo = async () => {
@@ -33,84 +31,51 @@ const AdminDashboard = () => {
     accessLogs: []
   });
 
-  // Verificar autenticação
   useEffect(() => {
+    // Verificar autenticação
     const adminToken = localStorage.getItem('admin_token');
     if (adminToken !== 'CYB3RSH3LL_FOR_CYB3RR4TS') {
       window.location.href = '/';
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    let socket;
-    let reconnectInterval;
     let sessionId;
-    const adminToken = localStorage.getItem('admin_token');
+    let reconnectInterval;
 
-    const connectSocket = () => {
-      socket = io('http://localhost:3000', {
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
-      });
-
-      socket.on('connect', () => {
-        console.log('WebSocket conectado');
-        socket.emit('authenticate', adminToken);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('WebSocket desconectado');
-      });
-
-      socket.on('analytics_update', (data) => {
-        setAnalytics(data);
-      });
-
-      socket.on('connect_error', (error) => {
-        console.error('Erro de conexão WebSocket:', error);
-        startPolling();
-      });
-    };
-
-    const startPolling = () => {
-      if (!reconnectInterval) {
-        reconnectInterval = setInterval(async () => {
-          const data = await AnalyticsService.getAnalytics();
-          setAnalytics(data);
-        }, 5000);
+    const loadInitialData = async () => {
+      try {
+        // Replace direct service call with API call
+        const response = await axios.get('/api/analytics');
+        setAnalytics(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
       }
     };
 
     const initializeVisitor = async () => {
       try {
         const visitorInfo = await getVisitorInfo();
-        await AnalyticsService.registerVisit(visitorInfo);
+        // Replace direct service calls with API calls
+        await axios.post('/api/visit', visitorInfo);
         
         sessionId = Math.random().toString(36).substring(2);
-        await AnalyticsService.updateActiveSession(sessionId, visitorInfo.ip);
+        await axios.post('/api/session', { sessionId, ip: visitorInfo.ip });
       } catch (error) {
         console.error('Erro ao inicializar visitante:', error);
       }
     };
 
-    const loadInitialData = async () => {
-      try {
-        const data = await AnalyticsService.getAnalytics();
-        setAnalytics(data);
-      } catch (error) {
-        console.error('Erro ao carregar dados iniciais:', error);
-      }
-    };
-
-    initializeVisitor();
+    // Inicialização
     loadInitialData();
-    connectSocket();
+    initializeVisitor();
 
+    // Polling removed - data is fetched initially.
+    // Consider WebSocket or periodic fetch if real-time updates are critical.
+    const stopPolling = () => {}; // Placeholder if needed elsewhere
+
+    // Cleanup
     return () => {
-      if (socket) {
-        socket.disconnect();
-      }
+      // stopPolling(); // Removed as polling is removed
       if (reconnectInterval) {
         clearInterval(reconnectInterval);
       }

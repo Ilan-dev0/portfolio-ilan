@@ -1,8 +1,10 @@
+import 'dotenv/config'; // Load .env file
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { AnalyticsService } from '../services/analyticsService.js';
+import { GeoLocationService } from '../services/geoLocationService.js';
 import { getConnection } from '../config/database.js';
 
 const app = express();
@@ -26,13 +28,23 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 
-// Middleware para verificar conexão com banco de dados
+// Middleware para verificar conexão com banco de dados e registrar visitas
 app.use(async (req, res, next) => {
   try {
     const connection = await getConnection();
     if (!connection) {
       throw new Error('Database connection failed');
     }
+
+    // Obter IP real do cliente
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    
+    // Obter informações de localização
+    const locationInfo = await GeoLocationService.getLocationFromIp(ip);
+    
+    // Registrar visita
+    await AnalyticsService.registerVisit(locationInfo);
+
     next();
   } catch (error) {
     console.error('Database middleware error:', error);
@@ -50,6 +62,21 @@ app.get('/api/analytics', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
+// Rota para atualizar sessão ativa (protegida)
+app.post('/api/session', authMiddleware, async (req, res) => {
+  const { sessionId, ip } = req.body;
+  if (!sessionId || !ip) {
+    return res.status(400).json({ error: 'sessionId and ip are required' });
+  }
+  try {
+    await AnalyticsService.updateActiveSession(sessionId, ip);
+    res.status(200).json({ message: 'Session updated successfully' });
+  } catch (error) {
+    console.error('Error updating session:', error);
+    res.status(500).json({ error: 'Failed to update session' });
+  }
+});
+
 
 // WebSocket para atualizações em tempo real
 io.on('connection', (socket) => {

@@ -8,30 +8,27 @@ const App = () => {
     <BrowserRouter>
       <div className='relative z-0 bg-primary'>
         <Navbar />
-        <Routes>
-          <Route path="/" element={
-            <>
-              <div className='bg-hero-pattern bg-cover bg-no-repeat bg-center'>
-                <Hero />
-              </div>
-              <About />
-              <Experience />
-              <Tech />
-              <Works />
-              <div className='relative z-0'>
+        <div className='relative'>
+          <Routes>
+            <Route path="/" element={
+              <>
+                <div className='bg-hero-pattern bg-cover bg-no-repeat bg-center'>
+                  <Hero />
+                </div>
+                <About />
+                <Experience />
+                <Tech />
+                <Works />
                 <Contact />
-                <StarsCanvas />
-              </div>
-            </>
-          } />
-          <Route path="/cyber" element={<CyberSecurity />} />
-          <Route path="/cybersecurity" element={<CyberSecurity />} />
-          <Route path="/admin" element={<AdminAuth />} />
-        </Routes>
-        <div className='relative z-0'>
+              </>
+            } />
+            <Route path="/cyber" element={<CyberSecurity />} />
+            <Route path="/cybersecurity" element={<CyberSecurity />} />
+            <Route path="/admin" element={<AdminAuth />} />
+          </Routes>
           <StarsCanvas />
+          <ChatBot />
         </div>
-        <ChatBot />
       </div>
     </BrowserRouter>
   );

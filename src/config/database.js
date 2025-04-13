@@ -1,15 +1,24 @@
-import mysql from 'mysql2/promise';
+import { createConnection } from 'mysql2/promise';
 
 const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.VITE_DB_HOST,
+  port: process.env.VITE_DB_PORT,
+  user: process.env.VITE_DB_USER,
+  password: process.env.VITE_DB_PASSWORD,
+  database: process.env.VITE_DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 10000,
+  connectTimeout: 20000,
+  ssl: {
+    rejectUnauthorized: false,
+    minVersion: 'TLSv1.2'
+  },
+  socketPath: null,
+  acquireTimeout: 30000,
+  timezone: '+00:00'
 };
 
 const createTables = async (connection) => {
@@ -53,13 +62,13 @@ const createTables = async (connection) => {
 
 let connection = null;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 5000;
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_DELAY = 3000;
 
 export const getConnection = async () => {
   if (!connection) {
     try {
-      connection = await mysql.createConnection(dbConfig);
+      connection = await createConnection(dbConfig);
       connection.on('error', handleConnectionError);
       await createTables(connection);
       reconnectAttempts = 0;

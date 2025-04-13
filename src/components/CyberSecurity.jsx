@@ -94,7 +94,7 @@ const tools = [
 
 // Vigenère: Pbqr vf gur xrl gb gur qnex
 
-const CyberSecurityContent = () => {
+const CyberSecurity = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showWarning, setShowWarning] = useState(true);
@@ -102,7 +102,6 @@ const CyberSecurityContent = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
-
   useEffect(() => {
     const hasAccepted = localStorage.getItem('cyber_terms_accepted');
     if (hasAccepted === 'true') {
@@ -421,4 +420,4 @@ const CyberSecurityContent = () => {
   );
 };
 
-export default CyberSecurityContent;
+export default CyberSecurity;
