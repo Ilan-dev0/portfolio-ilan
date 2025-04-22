@@ -4,32 +4,14 @@ import { styles } from '../styles';
 import { fadeIn, textVariant } from '../utils/motion';
 import axios from 'axios';
 
-const getVisitorInfo = async () => {
-  try {
-    const response = await axios.get('https://ipapi.co/json/');
-    return {
-      ip: response.data.ip,
-      city: response.data.city,
-      region: response.data.region,
-      country: response.data.country_name
-    };
-  } catch (error) {
-    console.error('Erro ao obter informações do visitante:', error);
-    return {
-      ip: 'Não disponível',
-      city: 'Não disponível',
-      region: 'Não disponível',
-      country: 'Não disponível'
-    };
-  }
-};
-
+// Remove a função getVisitorInfo, não é necessária no dashboard
 const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState({
     totalVisitors: 0,
     activeVisitors: 0,
-    accessLogs: []
+    accessLogs: [] // Mantém os logs de acesso gerais
   });
+  const [detailedTrackingData, setDetailedTrackingData] = useState([]); // Novo estado para dados detalhados
 
   useEffect(() => {
     // Verificar autenticação
@@ -39,46 +21,39 @@ const AdminDashboard = () => {
       return;
     }
 
-    let sessionId;
-    let reconnectInterval;
+    // Remove sessionId e reconnectInterval se não forem mais usados
 
-    const loadInitialData = async () => {
+    const loadDashboardData = async () => {
       try {
-        // Replace direct service call with API call
-        const response = await axios.get('/api/analytics');
-        setAnalytics(response.data);
+        // Busca dados de analytics gerais
+        const analyticsResponse = await axios.get('/api/analytics', {
+          headers: { Authorization: `Bearer ${adminToken}` } // Envia token
+        });
+        setAnalytics(analyticsResponse.data);
+
+        // Busca dados de rastreamento detalhados
+        const trackingResponse = await axios.get('/api/tracking-data', {
+          headers: { Authorization: `Bearer ${adminToken}` } // Envia token
+        });
+        setDetailedTrackingData(trackingResponse.data);
+
       } catch (error) {
-        console.error('Erro ao carregar dados iniciais:', error);
+        console.error('Erro ao carregar dados do dashboard:', error);
+        if (error.response && error.response.status === 401) {
+           console.error("Erro de autenticação ao buscar dados.");
+           // Poderia redirecionar para login ou mostrar mensagem
+        }
       }
     };
 
-    const initializeVisitor = async () => {
-      try {
-        const visitorInfo = await getVisitorInfo();
-        // Replace direct service calls with API calls
-        await axios.post('/api/visit', visitorInfo);
-        
-        sessionId = Math.random().toString(36).substring(2);
-        await axios.post('/api/session', { sessionId, ip: visitorInfo.ip });
-      } catch (error) {
-        console.error('Erro ao inicializar visitante:', error);
-      }
-    };
+    // Carrega os dados ao montar o componente
+    loadDashboardData();
 
-    // Inicialização
-    loadInitialData();
-    initializeVisitor();
+    // Remove a lógica de initializeVisitor e polling
 
-    // Polling removed - data is fetched initially.
-    // Consider WebSocket or periodic fetch if real-time updates are critical.
-    const stopPolling = () => {}; // Placeholder if needed elsewhere
-
-    // Cleanup
+    // Cleanup (se necessário)
     return () => {
-      // stopPolling(); // Removed as polling is removed
-      if (reconnectInterval) {
-        clearInterval(reconnectInterval);
-      }
+      // Nenhuma limpeza específica necessária por enquanto
     };
   }, []);
 
@@ -125,6 +100,44 @@ const AdminDashboard = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* NOVA SEÇÃO: Tabela de Rastreamento Detalhado */}
+        <motion.div
+          variants={fadeIn("up", "spring", 0.5, 0.75)}
+          className="bg-tertiary p-6 rounded-2xl border border-secondary/30 md:col-span-2 mt-8"
+        >
+          <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            Rastreamento Detalhado (Últimos 100)
+          </h3>
+          <div className="h-96 overflow-y-auto bg-black/30 rounded-lg">
+            <table className="w-full text-left text-sm text-white/80">
+              <thead className="sticky top-0 bg-tertiary/80 backdrop-blur-sm">
+                <tr>
+                  <th className="p-2">Timestamp</th>
+                  <th className="p-2">IP</th>
+                  <th className="p-2">Localização</th>
+                  <th className="p-2">Página</th>
+                  <th className="p-2">Tempo (s)</th>
+                  <th className="p-2">Dispositivo</th>
+                  <th className="p-2">Navegador</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailedTrackingData.map((track, index) => (
+                  <tr key={index} className="border-t border-black/50 hover:bg-black/40">
+                    <td className="p-2">{new Date(track.timestamp).toLocaleString()}</td>
+                    <td className="p-2">{track.ip_address}</td>
+                    <td className="p-2">{track.city}, {track.region}, {track.country}</td>
+                    <td className="p-2">{track.visited_page}</td>
+                    <td className="p-2">{track.time_spent_seconds ?? '-'}</td>
+                    <td className="p-2">{track.device_type}</td>
+                    <td className="p-2">{track.browser_name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </motion.div>
       </div>

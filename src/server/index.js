@@ -77,7 +77,58 @@ app.post('/api/session', authMiddleware, async (req, res) => {
   }
 });
 
+// Rota para receber dados de rastreamento detalhados do frontend (NOVA)
+app.post('/api/track', async (req, res) => {
+  const { deviceType, browserName, visitedPage, timeSpentSeconds } = req.body;
+  // Obter IP real do cliente (pode ser redundante se o middleware já o fez, mas seguro garantir)
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
+  if (!ip) {
+    return res.status(400).json({ error: 'IP address not found' });
+  }
+
+  try {
+    const connection = await getConnection();
+    // Obter informações de localização (pode ser otimizado se o middleware já as buscou)
+    const locationInfo = await GeoLocationService.getLocationFromIp(ip);
+
+    await connection.execute(
+      `INSERT INTO user_tracking (ip_address, country, city, region, device_type, browser_name, visited_page, time_spent_seconds, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        ip,
+        locationInfo.country,
+        locationInfo.city,
+        locationInfo.region,
+        deviceType,
+        browserName,
+        visitedPage,
+        timeSpentSeconds ? parseInt(timeSpentSeconds, 10) : null // Garante que seja número ou null
+      ]
+    );
+
+    res.status(200).json({ message: 'Tracking data received successfully' });
+  } catch (error) {
+    console.error('Error saving tracking data:', error);
+    res.status(500).json({ error: 'Failed to save tracking data' });
+  }
+});
+// Rota para obter dados de rastreamento detalhados (protegida) (NOVA)
+app.get('/api/tracking-data', authMiddleware, async (req, res) => {
+  try {
+    const connection = await getConnection();
+    // Busca os últimos 100 registros, por exemplo. Pode adicionar paginação depois.
+    const [trackingData] = await connection.execute(
+      'SELECT * FROM user_tracking ORDER BY timestamp DESC LIMIT 100'
+    );
+    res.json(trackingData);
+  } catch (error) {
+    console.error('Error fetching tracking data:', error);
+    res.status(500).json({ error: 'Failed to fetch tracking data' });
+  }
+});
+
+// WebSocket para atualizações em tempo real
 // WebSocket para atualizações em tempo real
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);

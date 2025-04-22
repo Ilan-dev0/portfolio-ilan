@@ -58,6 +58,24 @@ const createTables = async (connection) => {
       INDEX idx_last_activity (last_activity)
     )
   `);
+
+  // Tabela de rastreamento detalhado do usuário (NOVA)
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS user_tracking (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      ip_address VARCHAR(45) NOT NULL,
+      country VARCHAR(100),
+      city VARCHAR(100),
+      region VARCHAR(100),
+      device_type VARCHAR(50),
+      browser_name VARCHAR(100),
+      visited_page VARCHAR(255),
+      time_spent_seconds INT,
+      timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_ip_address (ip_address),
+      INDEX idx_timestamp_tracking (timestamp)
+    )
+  `);
 };
 
 let connection = null;
